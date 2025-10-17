@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Base Station Simulation</title>
+  <style>
+    body { font-family: Arial; background: #f0f0f0; padding: 20px; margin: 0; }
+    .panel { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; max-width: 900px; margin-left: auto; margin-right: auto; }
+    #map { width: 900px; height: 300px; background: #e0e0e0; position: relative; overflow: hidden; margin-left: auto; margin-right: auto; border-radius: 8px; }
+    .rover, .target {
+      width: 20px; height: 20px; border-radius: 50%; position: absolute;
+    }
+    .rover { background: blue; }
+    .target { background: red; }
+  </style>
+</head>
+<body>
+  <div class="panel" id="rtk">RTK Positioning: Loading...</div>
+  <div class="panel" id="drone">Drone Status: Scanning...</div>
+  <div class="panel" id="map">
+    <div class="rover" id="rover" style="left: 20px; top: 140px;"></div>
+    <div class="target" id="target" style="left: 800px; top: 140px;"></div>
+  </div>
+  <div class="panel" id="roverStatus">Rover Status: Idle</div>
+  <div class="panel" id="decision">Decision: Awaiting Consent</div>
+
+  <script>
+    let roverX = 20, roverY = 140;
+    let targetX = 800, targetY = 140;
+    let dispatched = true;
+
+    function updatePanels() {
+      const lat = (31.9686 + Math.random() * 0.001).toFixed(5);
+      const lon = (-99.9018 + Math.random() * 0.001).toFixed(5);
+      const signal = ["Weak", "Moderate", "Strong"][Math.floor(Math.random() * 3)];
+      const status = ["Scanning", "Dispatching Rover", "Idle"][Math.floor(Math.random() * 3)];
+
+      document.getElementById("rtk").innerText = `RTK Positioning:\nLat: ${lat}, Lon: ${lon}, Signal: ${signal}`;
+      document.getElementById("drone").innerText = `Drone Status: ${status}`;
+    }
+
+    function moveRover() {
+      if (dispatched) {
+        let dx = targetX - roverX;
+        let dy = targetY - roverY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 5) {
+          roverX += dx / distance * 5;
+          roverY += dy / distance * 5;
+          document.getElementById("rover").style.left = roverX + "px";
+          document.getElementById("rover").style.top = roverY + "px";
+          document.getElementById("roverStatus").innerText = "Rover Status: Moving to target...";
+        } else {
+          dispatched = false;
+          document.getElementById("roverStatus").innerText = "Rover Status: Scan complete.";
+
+          setTimeout(() => {
+            const confidence = ["Weak", "Moderate", "Strong"][Math.floor(Math.random() * 3)];
+            document.getElementById("decision").innerText = `Decision: Confidence = ${confidence}\nAwaiting archaeologist consent...`;
+
+            setTimeout(() => {
+              const approved = confidence === "Strong";
+              document.getElementById("decision").innerText += approved
+                ? `\n✅ Excavation Approved`
+                : `\n⛔ Excavation Deferred`;
+
+              setTimeout(() => {
+                targetX = Math.floor(Math.random() * 860) + 20;
+                targetY = Math.floor(Math.random() * 260) + 20;
+                roverX = 20;
+                roverY = 140;
+                document.getElementById("rover").style.left = roverX + "px";
+                document.getElementById("rover").style.top = roverY + "px";
+                document.getElementById("target").style.left = targetX + "px";
+                document.getElementById("target").style.top = targetY + "px";
+                dispatched = true;
+                document.getElementById("roverStatus").innerText = "Rover Status: Dispatching to new target...";
+              }, 2000);
+            }, 2000);
+          }, 2000);
+        }
+      }
+    }
+
+    setInterval(updatePanels, 2000);
+    setInterval(moveRover, 100);
+  </script>
+</body>
+</html>
